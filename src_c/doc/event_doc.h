@@ -3,7 +3,7 @@
 #define DOC_PYGAMEEVENTPUMP "pump() -> None\ninternally process pygame event handlers"
 #define DOC_PYGAMEEVENTGET "get(eventtype=None) -> Eventlist\nget(eventtype=None, pump=True) -> Eventlist\nget events from the queue"
 #define DOC_PYGAMEEVENTPOLL "poll() -> EventType instance\nget a single event from the queue"
-#define DOC_PYGAMEEVENTWAIT "wait() -> EventType instance\nwait for a single event from the queue"
+#define DOC_PYGAMEEVENTWAIT "wait() -> EventType instance\nwait(timeout) -> EventType instance\nwait for a single event from the queue"
 #define DOC_PYGAMEEVENTPEEK "peek(eventtype=None) -> bool\npeek(eventtype=None, pump=True) -> bool\ntest if event types are waiting on the queue"
 #define DOC_PYGAMEEVENTCLEAR "clear(eventtype=None) -> None\nclear(eventtype=None, pump=True) -> None\nremove all events from the queue"
 #define DOC_PYGAMEEVENTEVENTNAME "event_name(type) -> string\nget the string name from an event id"
@@ -12,7 +12,7 @@
 #define DOC_PYGAMEEVENTGETBLOCKED "get_blocked(type) -> bool\nget_blocked(typelist) -> bool\ntest if a type of event is blocked from the queue"
 #define DOC_PYGAMEEVENTSETGRAB "set_grab(bool) -> None\ncontrol the sharing of input devices with other applications"
 #define DOC_PYGAMEEVENTGETGRAB "get_grab() -> bool\ntest if the program is sharing input devices"
-#define DOC_PYGAMEEVENTPOST "post(Event) -> None\nplace a new event on the queue"
+#define DOC_PYGAMEEVENTPOST "post(Event) -> bool\nplace a new event on the queue"
 #define DOC_PYGAMEEVENTCUSTOMTYPE "custom_type() -> int\nmake custom user event type"
 #define DOC_PYGAMEEVENTEVENT "Event(type, dict) -> EventType instance\nEvent(type, **attributes) -> EventType instance\ncreate a new event object"
 #define DOC_PYGAMEEVENTEVENTTYPE "pygame object for representing events"
@@ -42,6 +42,7 @@ get a single event from the queue
 
 pygame.event.wait
  wait() -> EventType instance
+ wait(timeout) -> EventType instance
 wait for a single event from the queue
 
 pygame.event.peek
@@ -84,7 +85,7 @@ pygame.event.get_grab
 test if the program is sharing input devices
 
 pygame.event.post
- post(Event) -> None
+ post(Event) -> bool
 place a new event on the queue
 
 pygame.event.custom_type

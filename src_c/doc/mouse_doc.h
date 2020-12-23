@@ -1,15 +1,14 @@
 /* Auto generated file: with makeref.py .  Docs go in docs/reST/ref/ . */
 #define DOC_PYGAMEMOUSE "pygame module to work with the mouse"
-#define DOC_PYGAMEMOUSEGETPRESSED "get_pressed() -> (button1, button2, button3, button4, button5)\nget the state of the mouse buttons"
+#define DOC_PYGAMEMOUSEGETPRESSED "get_pressed(num_buttons=3) -> (button1, button2, button3)\nget_pressed(num_buttons=5) -> (button1, button2, button3, button4, button5)\nget the state of the mouse buttons"
 #define DOC_PYGAMEMOUSEGETPOS "get_pos() -> (x, y)\nget the mouse cursor position"
 #define DOC_PYGAMEMOUSEGETREL "get_rel() -> (x, y)\nget the amount of mouse movement"
 #define DOC_PYGAMEMOUSESETPOS "set_pos([x, y]) -> None\nset the mouse cursor position"
 #define DOC_PYGAMEMOUSESETVISIBLE "set_visible(bool) -> bool\nhide or show the mouse cursor"
 #define DOC_PYGAMEMOUSEGETVISIBLE "get_visible() -> bool\nget the current visibility state of the mouse cursor"
 #define DOC_PYGAMEMOUSEGETFOCUSED "get_focused() -> bool\ncheck if the display is receiving mouse input"
-#define DOC_PYGAMEMOUSESETCURSOR "set_cursor(size, hotspot, xormasks, andmasks) -> None\nset the image for the mouse cursor"
-#define DOC_PYGAMEMOUSESETSYSTEMCURSOR "set_system_cursor(constant) -> None\nset the mouse cursor to a system variant"
-#define DOC_PYGAMEMOUSEGETCURSOR "get_cursor() -> (size, hotspot, xormasks, andmasks)\nget the image of the mouse cursor"
+#define DOC_PYGAMEMOUSESETCURSOR "set_cursor(pygame.cursors.Cursor) -> None\nset_cursor(size, hotspot, xormasks, andmasks) -> None\nset_cursor(hotspot, surface) -> None\nset_cursor(constant) -> None\nset the mouse cursor to a new cursor"
+#define DOC_PYGAMEMOUSEGETCURSOR "get_cursor() -> pygame.cursors.Cursor\nget the current mouse cursor"
 
 
 /* Docs in a comment... slightly easier to read. */
@@ -20,7 +19,8 @@ pygame.mouse
 pygame module to work with the mouse
 
 pygame.mouse.get_pressed
- get_pressed() -> (button1, button2, button3, button4, button5)
+ get_pressed(num_buttons=3) -> (button1, button2, button3)
+ get_pressed(num_buttons=5) -> (button1, button2, button3, button4, button5)
 get the state of the mouse buttons
 
 pygame.mouse.get_pos
@@ -48,15 +48,14 @@ pygame.mouse.get_focused
 check if the display is receiving mouse input
 
 pygame.mouse.set_cursor
+ set_cursor(pygame.cursors.Cursor) -> None
  set_cursor(size, hotspot, xormasks, andmasks) -> None
-set the image for the mouse cursor
-
-pygame.mouse.set_system_cursor
- set_system_cursor(constant) -> None
-set the mouse cursor to a system variant
+ set_cursor(hotspot, surface) -> None
+ set_cursor(constant) -> None
+set the mouse cursor to a new cursor
 
 pygame.mouse.get_cursor
- get_cursor() -> (size, hotspot, xormasks, andmasks)
-get the image of the mouse cursor
+ get_cursor() -> pygame.cursors.Cursor
+get the current mouse cursor
 
 */

@@ -73,7 +73,7 @@ specific attributes.
     QUIT              none
     ACTIVEEVENT       gain, state
     KEYDOWN           key, mod, unicode, scancode
-    KEYUP             key, mod
+    KEYUP             key, mod, unicode, scancode
     MOUSEMOTION       pos, rel, buttons
     MOUSEBUTTONUP     pos, button
     MOUSEBUTTONDOWN   pos, button
@@ -86,12 +86,14 @@ specific attributes.
     VIDEOEXPOSE       none
     USEREVENT         code
 
+.. versionchanged:: 2.0.0 The ``joy`` attribute was deprecated, ``instance_id`` was added.
+
+.. versionchanged:: 2.0.1 The ``unicode`` attribute was added to ``KEYUP`` events.
+
 You can also find a list of constants for keyboard keys
 :ref:`here <key-constants-label>`.
 
 |
-
-.. versionadded:: 1.9.2
 
 On MacOSX when a file is opened using a pygame application, a ``USEREVENT``
 with its ``code`` attribute set to ``pygame.USEREVENT_DROPFILE`` is generated.
@@ -102,9 +104,9 @@ being accessed is stored.
 
     USEREVENT         code=pygame.USEREVENT_DROPFILE, filename
 
-|
+.. versionadded:: 1.9.2
 
-.. versionadded:: 1.9.5
+|
 
 When compiled with SDL2, pygame has these additional events and their
 attributes.
@@ -116,47 +118,33 @@ attributes.
     FINGERMOTION       touch_id, finger_id, x, y, dx, dy
     FINGERDOWN         touch_id, finger_id, x, y, dx, dy
     FINGERUP           touch_id, finger_id, x, y, dx, dy
+    MOUSEWHEEL         which, flipped, x, y
     MULTIGESTURE       touch_id, x, y, pinched, rotated, num_fingers
     TEXTEDITING        text, start, length
     TEXTINPUT          text
 
+.. versionadded:: 1.9.5
+
 |
 
-.. versionadded:: 2.0.0
+Many new events were intoduced in pygame 2.
 
 pygame can recognize text or files dropped in its window. If a file
-is dropped, ``file`` will be its path. The ``DROPTEXT`` event is only supported
-on X11.
+is dropped, ``DROPFILE`` event will be sent, ``file`` will be its path.
+The ``DROPTEXT`` event is only supported on X11.
+
+``MIDIIN`` and ``MIDIOUT`` are events reserved for :mod:`pygame.midi` use.
+
+pygame 2 also supports controller hotplugging
 
 ::
 
    DROPBEGIN
    DROPCOMPLETE
-   DROPFILE        file
-   DROPTEXT        text
-
-|
-
-.. versionadded:: 2.0.0
-
-Events reserved for :mod:`pygame.midi` use.
-
-::
-
+   DROPFILE                 file
+   DROPTEXT                 text
    MIDIIN
    MIDIOUT
-
-|
-
-
-|
-
-.. versionadded:: 2.0.0
-
-SDL2 supports controller hotplugging:
-
-::
-
    CONTROLLERDEVICEADDED    device_index
    JOYDEVICEADDED           device_index
    CONTROLLERDEVICEREMOVED  instance_id
@@ -165,6 +153,39 @@ SDL2 supports controller hotplugging:
 
 Also in this version, ``instance_id`` attributes were added to joystick events,
 and the ``joy`` attribute was deprecated.
+
+.. versionadded:: 2.0.0
+
+Since pygame 2.0.1, there are a new set of events, called windowevents.
+Here is a list of all window events, along with a short description
+
+::
+
+   Event type                Short description
+
+   WINDOWSHOWN            Window became shown
+   WINDOWHIDDEN           Window became hidden
+   WINDOWEXPOSED          Window got updated by some external event
+   WINDOWMOVED            Window got moved
+   WINDOWRESIZED          Window got resized
+   WINDOWSIZECHANGED      Window changed it's size
+   WINDOWMINIMIZED        Window was minimized
+   WINDOWMAXIMIZED        Window was maximized
+   WINDOWRESTORED         Window was restored
+   WINDOWENTER            Mouse entered the window
+   WINDOWLEAVE            Mouse left the window
+   WINDOWFOCUSGAINED      Window gained focus
+   WINDOWFOCUSLOST        Window lost focus
+   WINDOWCLOSE            Window was closed
+   WINDOWTAKEFOCUS        Window was offered focus
+   WINDOWHITTEST          Window has a special hit test
+
+
+If SDL version used is less than 2.0.5, the last two events ``WINDOWTAKEFOCUS``
+and ``WINDOWHITTEST`` will not work.
+
+Most these window events do not have any attributes, except ``WINDOWMOVED``,
+``WINDOWRESIZED`` and ``WINDOWSIZECHANGED``, these have ``x`` and ``y`` attributes
 
 |
 
@@ -207,7 +228,7 @@ and the ``joy`` attribute was deprecated.
 
    If ``pump`` is ``True`` (the default), then :func:`pygame.event.pump()` will be called.
 
-   .. versionadded:: 1.9.5 ``pump``
+   .. versionchanged:: 1.9.5 Added ``pump`` argument
 
    .. ## pygame.event.get ##
 
@@ -229,12 +250,17 @@ and the ``joy`` attribute was deprecated.
 
    | :sl:`wait for a single event from the queue`
    | :sg:`wait() -> EventType instance`
+   | :sg:`wait(timeout) -> EventType instance`
 
    Returns a single event from the queue. If the queue is empty this function
-   will wait until one is created. The event is removed from the queue once it
-   has been returned. While the program is waiting it will sleep in an idle
-   state. This is important for programs that want to share the system with
-   other applications.
+   will wait until one is created. From pygame 2.0.0, if a ``timeout`` argument
+   is given, the function will return an event of type ``pygame.NOEVENT`` 
+   if no events enter the queue in ``timeout`` milliseconds. The event is removed
+   from the queue once it has been returned. While the program is waiting it will
+   sleep in an idle state. This is important for programs that want to share the
+   system with other applications.
+
+   .. versionchanged:: 2.0.0.dev13 Added ``timeout`` argument
 
    .. caution::
       This function should only be called in the thread that initialized :mod:`pygame.display`.
@@ -253,7 +279,7 @@ and the ``joy`` attribute was deprecated.
 
    If ``pump`` is ``True`` (the default), then :func:`pygame.event.pump()` will be called.
 
-   .. versionadded:: 1.9.5 ``pump``
+   .. versionchanged:: 1.9.5 Added ``pump`` argument
 
    .. ## pygame.event.peek ##
 
@@ -269,7 +295,7 @@ and the ``joy`` attribute was deprecated.
 
    If ``pump`` is ``True`` (the default), then :func:`pygame.event.pump()` will be called.
 
-   .. versionadded:: 1.9.5 ``pump``
+   .. versionchanged:: 1.9.5 Added ``pump`` argument
 
    .. ## pygame.event.clear ##
 
@@ -357,24 +383,17 @@ and the ``joy`` attribute was deprecated.
 .. function:: post
 
    | :sl:`place a new event on the queue`
-   | :sg:`post(Event) -> None`
+   | :sg:`post(Event) -> bool`
 
    Places the given event at the end of the event queue.
 
-   This is usually used for placing ``pygame.USEREVENT`` events on the queue.
-   Although any type of event can be placed, if using the system event types
-   your program should be sure to create the standard attributes with
-   appropriate values.
+   This is usually used for placing custom events on the event queue.
+   Any type of event can be posted, and the events posted can have any attributes.
 
-   If the event queue is full a :exc:`pygame.error` is raised.
+   This returns a boolean on whether the event was posted or not. Blocked events
+   cannot be posted, and this function returns ``False`` if you try to post them.
 
-   Caution: In pygame 2.0, calling this function with event types defined by
-   pygame (such as ``pygame.KEYDOWN``) may put events into the SDL2 event queue.
-   In this case, an error may be raised if standard attributes of that event
-   are missing or have incompatible values, and unexpected properties may
-   be silently omitted. In order to avoid this behaviour, custom event
-   properties should be used with custom event types.
-   This behaviour is not guaranteed.
+   .. versionchanged:: 2.0.1 returns a boolean, previously returned ``None``
 
    .. ## pygame.event.post ##
 

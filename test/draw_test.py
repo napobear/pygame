@@ -1,6 +1,7 @@
 import math
 import unittest
 import sys
+import warnings
 
 import pygame
 from pygame import draw
@@ -1087,7 +1088,7 @@ class BaseLineMixin(object):
         # Yields pairs of end points and their reverse (to test symmetry).
         # Uses a rect with the points radiating from its midleft.
         for pt in rect_corners_mids_and_center(rect):
-            if pt == rect.midleft or pt == rect.center:
+            if pt in [rect.midleft, rect.center]:
                 # Don't bother with these points.
                 continue
             yield (rect.midleft, pt)
@@ -1518,9 +1519,21 @@ class LineMixin(BaseLineMixin):
                     surface.get_at(pos), expected_color, "pos={}".format(pos)
                 )
 
-    def todo_test_line__color_with_thickness(self):
+    def test_line__color_with_thickness(self):
         """Ensures a thick line is drawn using the correct color."""
-        self.fail()
+        from_x = 5
+        to_x = 10
+        y = 5
+        for surface in self._create_surfaces():
+            for expected_color in self.COLORS:
+                self.draw_line(surface, expected_color, (from_x, y),
+                               (to_x, y), 5)
+                for pos in ((x, y + i) for i in (-2, 0, 2)
+                            for x in (from_x, to_x)):
+                    self.assertEqual(
+                        surface.get_at(pos), expected_color,
+                        "pos={}".format(pos)
+                    )
 
     def test_line__gaps(self):
         """Tests if the line drawn contains any gaps."""
@@ -1535,9 +1548,23 @@ class LineMixin(BaseLineMixin):
                     surface.get_at(pos), expected_color, "pos={}".format(pos)
                 )
 
-    def todo_test_line__gaps_with_thickness(self):
+    def test_line__gaps_with_thickness(self):
         """Ensures a thick line is drawn without any gaps."""
-        self.fail()
+        expected_color = (255, 255, 255)
+        thickness = 5
+        for surface in self._create_surfaces():
+            width = surface.get_width() - 1
+            h = width // 5
+            w = h * 5
+            self.draw_line(surface, expected_color, (0, 5),
+                           (w, 5 + h), thickness)
+
+            for x in range(w + 1):
+                for y in range(3, 8):
+                    pos = (x, y + ((x + 2) // 5))
+                    self.assertEqual(
+                        surface.get_at(pos), expected_color, "pos={}".format(pos)
+                    )
 
     def test_line__bounding_rect(self):
         """Ensures draw line returns the correct bounding rect.
@@ -1737,23 +1764,18 @@ class DrawLineTest(LineMixin, DrawTestCase):
 
             for i in range(line_width):
                 p = (p1[0] + xinc * i, p1[1] + yinc * i)
-
                 self.assertEqual(self.surf.get_at(p), (255, 255, 255), msg)
 
                 p = (p2[0] + xinc * i, p2[1] + yinc * i)
-
                 self.assertEqual(self.surf.get_at(p), (255, 255, 255), msg)
 
             p = (plow[0] - 1, plow[1])
-
             self.assertEqual(self.surf.get_at(p), (0, 0, 0), msg)
 
             p = (plow[0] + xinc * line_width, plow[1] + yinc * line_width)
-
             self.assertEqual(self.surf.get_at(p), (0, 0, 0), msg)
 
             p = (phigh[0] + xinc * line_width, phigh[1] + yinc * line_width)
-
             self.assertEqual(self.surf.get_at(p), (0, 0, 0), msg)
 
             if p1[0] < p2[0]:
@@ -2209,9 +2231,32 @@ class LinesMixin(BaseLineMixin):
                 for pos, color in border_pos_and_color(surface):
                     self.assertEqual(color, expected_color, "pos={}".format(pos))
 
-    def todo_test_lines__color_with_thickness(self):
+    def test_lines__color_with_thickness(self):
         """Ensures thick lines are drawn using the correct color."""
-        self.fail()
+        x_left = y_top = 5
+        for surface in self._create_surfaces():
+            x_right = surface.get_width() - 5
+            y_bottom = surface.get_height() - 5
+            endpoints = ((x_left, y_top), (x_right, y_top),
+                         (x_right, y_bottom), (x_left, y_bottom))
+            for expected_color in self.COLORS:
+                self.draw_lines(surface, expected_color, True, endpoints, 3)
+
+                for t in (-1, 0, 1):
+                    for x in range(x_left, x_right+1):
+                        for y in (y_top, y_bottom):
+                            pos = (x, y + t)
+                            self.assertEqual(
+                                    surface.get_at(pos), expected_color,
+                                    "pos={}".format(pos)
+                            )
+                    for y in range(y_top, y_bottom+1):
+                        for x in (x_left, x_right):
+                            pos = (x + t, y)
+                            self.assertEqual(
+                                    surface.get_at(pos), expected_color,
+                                    "pos={}".format(pos)
+                            )
 
     def test_lines__gaps(self):
         """Tests if the lines drawn contain any gaps.
@@ -2226,9 +2271,38 @@ class LinesMixin(BaseLineMixin):
             for pos, color in border_pos_and_color(surface):
                 self.assertEqual(color, expected_color, "pos={}".format(pos))
 
-    def todo_test_lines__gaps_with_thickness(self):
+    def test_lines__gaps_with_thickness(self):
         """Ensures thick lines are drawn without any gaps."""
-        self.fail()
+        expected_color = (255, 255, 255)
+        x_left = y_top = 5
+        for surface in self._create_surfaces():
+            h = (surface.get_width() - 11) // 5
+            w = h * 5
+            x_right = x_left + w
+            y_bottom = y_top + h
+            endpoints = ((x_left, y_top), (x_right, y_top),
+                         (x_right, y_bottom))
+            self.draw_lines(surface, expected_color, True, endpoints, 3)
+
+            for x in range(x_left, x_right+1):
+                for t in (-1, 0, 1):
+                    pos = (x, y_top + t)
+                    self.assertEqual(
+                            surface.get_at(pos), expected_color,
+                            "pos={}".format(pos)
+                    )
+                    pos = (x, y_top + t + ((x - 3) // 5))
+                    self.assertEqual(
+                            surface.get_at(pos), expected_color,
+                            "pos={}".format(pos)
+                    )
+            for y in range(y_top, y_bottom+1):
+                for t in (-1, 0, 1):
+                    pos = (x_right + t, y)
+                    self.assertEqual(
+                            surface.get_at(pos), expected_color,
+                            "pos={}".format(pos)
+                    )
 
     def test_lines__bounding_rect(self):
         """Ensures draw lines returns the correct bounding rect.
@@ -2368,6 +2442,17 @@ class AALineMixin(BaseLineMixin):
         )
 
         self.assertIsInstance(bounds_rect, pygame.Rect)
+
+    def test_aaline__blend_warning(self):
+        """From pygame 2, blend=False should raise DeprecationWarning."""
+        with warnings.catch_warnings(record=True) as w:
+            #Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+            #Trigger DeprecationWarning.
+            self.draw_aaline(pygame.Surface((2, 2)), (0, 0, 0, 50), (0, 0), (2, 2), False)
+            #Check if there is only one warning and is a DeprecationWarning.
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
 
     def test_aaline__kwargs(self):
         """Ensures draw aaline accepts the correct kwargs
@@ -2632,7 +2717,7 @@ class AALineMixin(BaseLineMixin):
                 for i, sub_color in enumerate(expected_color):
                     # The color could be slightly off the expected color due to
                     # any fractional position arguments.
-                    self.assertGreaterEqual(color[i] + 5, sub_color, start_pos)
+                    self.assertGreaterEqual(color[i] + 6, sub_color, start_pos)
                 self.assertIsInstance(bounds_rect, pygame.Rect, start_pos)
 
     def test_aaline__valid_end_pos_formats(self):
@@ -2940,8 +3025,6 @@ class DrawAALineTest(AALineMixin, DrawTestCase):
 
     def test_short_non_antialiased_lines(self):
         """test very short not anti aliased lines in all directions."""
-        if isinstance(self, DrawTestCase):
-            self.skipTest("not working with draw.aaline")
 
         # Horizontal, vertical and diagonal lines should not be anti-aliased,
         # even with draw.aaline ...
@@ -2970,8 +3053,6 @@ class DrawAALineTest(AALineMixin, DrawTestCase):
         check_both_directions((6, 4), (4, 6), [(5, 5)])
 
     def test_short_line_anti_aliasing(self):
-        if isinstance(self, DrawTestCase):
-            self.skipTest("not working with draw.aaline")
 
         self.surface = pygame.Surface((10, 10))
         draw.rect(self.surface, BG_RED, (0, 0, 10, 10), 0)
@@ -2981,8 +3062,11 @@ class DrawAALineTest(AALineMixin, DrawTestCase):
         def check_both_directions(from_pt, to_pt, should):
             self._check_antialiasing(from_pt, to_pt, should, check_points)
 
-        # lets say dx = abs(x0 - x1) ; dy = abs(y0 - y1)
         brown = (127, 127, 0)
+        reddish = (191, 63, 0)
+        greenish = (63, 191, 0)
+
+        # lets say dx = abs(x0 - x1) ; dy = abs(y0 - y1)
 
         # dy / dx = 0.5
         check_both_directions((4, 4), (6, 5), {(5, 4): brown, (5, 5): brown})
@@ -2995,8 +3079,6 @@ class DrawAALineTest(AALineMixin, DrawTestCase):
         # some little longer lines; so we need to check more points:
         check_points = [(i, j) for i in range(2, 9) for j in range(2, 9)]
         # dy / dx = 0.25
-        reddish = (191, 63, 0)
-        greenish = (63, 191, 0)
         should = {
             (4, 3): greenish,
             (5, 3): brown,
@@ -3040,23 +3122,23 @@ class DrawAALineTest(AALineMixin, DrawTestCase):
 
     def test_anti_aliasing_float_coordinates(self):
         """Float coordinates should be blended smoothly."""
-        if isinstance(self, DrawTestCase):
-            self.skipTest("not working with draw.aaline")
 
         self.surface = pygame.Surface((10, 10))
         draw.rect(self.surface, BG_RED, (0, 0, 10, 10), 0)
 
         check_points = [(i, j) for i in range(5) for j in range(5)]
         brown = (127, 127, 0)
+        reddish = (191, 63, 0)
+        greenish = (63, 191, 0)
 
         # 0. identical point : current implementation does no smoothing...
-        expected = {(1, 2): FG_GREEN}
+        expected = {(2, 2): FG_GREEN}
         self._check_antialiasing(
             (1.5, 2), (1.5, 2), expected, check_points, set_endpoints=False
         )
-        expected = {(2, 2): FG_GREEN}
+        expected = {(2, 3): FG_GREEN}
         self._check_antialiasing(
-            (2.5, 2.7), (2.5, 2.7), expected, check_points, set_endpoints=False
+            (2.49, 2.7), (2.49, 2.7), expected, check_points, set_endpoints=False
         )
 
         # 1. horizontal lines
@@ -3073,7 +3155,7 @@ class DrawAALineTest(AALineMixin, DrawTestCase):
         self._check_antialiasing(
             (1, 2), (1.5, 2), expected, check_points, set_endpoints=False
         )
-        expected = {(1, 2): brown, (2, 2): (63, 191, 0)}
+        expected = {(1, 2): brown, (2, 2): greenish}
         self._check_antialiasing(
             (1.5, 2), (1.75, 2), expected, check_points, set_endpoints=False
         )
@@ -3090,7 +3172,7 @@ class DrawAALineTest(AALineMixin, DrawTestCase):
         self._check_antialiasing(
             (2, 1.5), (2, 2.5), expected, check_points, set_endpoints=False
         )
-        expected = {(2, 1): brown, (2, 2): (63, 191, 0)}
+        expected = {(2, 1): brown, (2, 2): greenish}
         self._check_antialiasing(
             (2, 1.5), (2, 1.75), expected, check_points, set_endpoints=False
         )
@@ -3115,8 +3197,6 @@ class DrawAALineTest(AALineMixin, DrawTestCase):
             (2, 1.5), (3, 2.5), expected, check_points, set_endpoints=False
         )
 
-        reddish = (191, 63, 0)
-        greenish = (63, 191, 0)
         expected = {
             (2, 1): greenish,
             (2, 2): reddish,
@@ -3132,8 +3212,6 @@ class DrawAALineTest(AALineMixin, DrawTestCase):
 
     def test_anti_aliasing_at_and_outside_the_border(self):
         """Ensures antialiasing works correct at a surface's borders."""
-        if isinstance(self, DrawTestCase):
-            self.skipTest("not working with draw.aaline")
 
         self.surface = pygame.Surface((10, 10))
         draw.rect(self.surface, BG_RED, (0, 0, 10, 10), 0)
@@ -3197,6 +3275,17 @@ class AALinesMixin(BaseLineMixin):
         )
 
         self.assertIsInstance(bounds_rect, pygame.Rect)
+
+    def test_aalines__blend_warning(self):
+        """From pygame 2, blend=False should raise DeprecationWarning."""
+        with warnings.catch_warnings(record=True) as w:
+            #Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+            #Trigger DeprecationWarning.
+            self.draw_aalines(pygame.Surface((2, 2)), (0, 0, 0, 50), False, ((0, 0), (1, 1)), False)
+            #Check if there is only one warning and is a DeprecationWarning.
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
 
     def test_aalines__kwargs(self):
         """Ensures draw aalines accepts the correct kwargs

@@ -17,15 +17,9 @@ import traceback, sys
 from pygame.compat import geterror
 
 if sys.version_info[0] == 3:
-    from queue import Queue
-    from queue import Empty
-elif (sys.version_info[0] == 2 and sys.version_info[1] < 5):
-    from Py25Queue import Queue
-    from Py25Queue import Empty
+    from queue import Queue, Empty
 else:
-    # use up to date version
-    from Queue import Queue
-    from Queue import Empty
+    from Queue import Queue, Empty
 
 import threading
 Thread = threading.Thread
@@ -181,13 +175,12 @@ class WorkerQueue(object):
                 self.queue.put(STOP)
                 self.queue.task_done()
                 break
-            else:
-                try:
-                    args[0](*args[1], **args[2])
-                finally:
-                    # clean up the queue, raise the exception.
-                    self.queue.task_done()
-                    #raise
+            try:
+                args[0](*args[1], **args[2])
+            finally:
+                # clean up the queue, raise the exception.
+                self.queue.task_done()
+                #raise
 
     def wait(self):
         """ waits until all tasks are complete.
@@ -289,5 +282,4 @@ def tmap(f, seq_args, num_workers=20, worker_queue=None, wait=True, stop_on_erro
                 raise error_ones[0].exception
 
         return map(lambda x: x.result, results)
-    else:
-        return [wq, results]
+    return [wq, results]

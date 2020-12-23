@@ -15,7 +15,7 @@ EXTRAS = {}
 
 METADATA = {
     "name":             "pygame",
-    "version":          "2.0.0.dev13",
+    "version":          "2.0.1.dev1",
     "license":          "LGPL",
     "url":              "https://www.pygame.org",
     "author":           "A community project.",
@@ -115,6 +115,12 @@ if consume_arg('-pygame-ci'):
               '-Werror=cast-align -Werror=int-conversion ' + \
               '-Werror=incompatible-pointer-types'
     os.environ['CFLAGS'] = cflags
+
+# For python 2 we remove the -j options.
+if sys.version_info[0] < 3:
+    # Used for parallel builds with setuptools. Not supported by py2.
+    [consume_arg('-j%s' % x) for x in range(32)]
+
 
 STRIPPED=False
 
@@ -747,8 +753,7 @@ class DocsCommand(Command):
             raise
 
 # Prune empty file lists.
-date_files = [(path, files) for path, files in data_files if files]
-
+data_files = [(path, files) for path, files in data_files if files]
 
 #finally,
 #call distutils with all needed info
@@ -786,6 +791,15 @@ PACKAGEDATA = {
        "zip_safe":  False,
 }
 if STRIPPED:
+    pygame_data_files = []
+    data_files = [('pygame', ["src_py/freesansbold.ttf",
+                              "src_py/pygame.ico",
+                              "src_py/pygame_icon.icns",
+                              "src_py/pygame_icon.svg",
+                              "src_py/pygame_icon.bmp",
+                              "src_py/pygame_icon.tiff"])]
+    
+
     PACKAGEDATA = {
     "cmdclass":    cmdclass,
     "packages":    ['pygame',
@@ -796,6 +810,7 @@ if STRIPPED:
                     'pygame.threads': 'src_py/threads'},
     "ext_modules": extensions,
     "zip_safe":  False,
+    "data_files": data_files
 }
 
 PACKAGEDATA.update(METADATA)

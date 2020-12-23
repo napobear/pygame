@@ -1,10 +1,13 @@
 from typing import Dict, List, Sequence, Tuple, TypeVar, Union, overload, Iterable
+from typing_extensions import Protocol
 from pygame.math import Vector2
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
 
-_RectStyle = Union[
+_Coordinate = Union[Tuple[float, float], List[float], Vector2]
+_CanBeRect = Union[
+    "Rect",
     Tuple[float, float, float, float],
     Tuple[Tuple[float, float], Tuple[float, float]],
     List[float],
@@ -12,7 +15,11 @@ _RectStyle = Union[
     Tuple[Vector2, Vector2],
     Iterable[Vector2],
 ]
-_Coordinate = Union[Tuple[float, float], List[float], Vector2]
+class _HasRectAttribute(Protocol):
+    rect: _CanBeRect
+_RectValue = Union[
+    _CanBeRect, _HasRectAttribute
+]
 
 class Rect(object):
     x: int
@@ -74,6 +81,21 @@ class Rect(object):
     def inflate_ip(self, x: float, y: float) -> None: ...
     @overload
     def inflate_ip(self, inflate_by: _Coordinate) -> None: ...
+    @overload
+    def update(
+        self, left: float, top: float, width: float, height: float
+    ) -> None: ...
+    @overload
+    def update(
+        self,
+        left_top: Union[List[float], Tuple[float, float], Vector2],
+        width_height: Union[List[float], Tuple[float, float], Vector2],
+    ) -> None: ...
+    @overload
+    def update(
+        self,
+        left_top_width_height: Union[Rect, Tuple[float, float, float, float], List[float]]
+    ) -> None: ...
     @overload
     def clamp(self, rect: Union[_RectStyle, Rect]) -> Rect: ...
     @overload

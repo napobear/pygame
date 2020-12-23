@@ -262,17 +262,44 @@ _format_view_to_audio(Py_buffer *view)
 }
 
 static void
+_pg_push_mixer_event(int type, int code)
+{
+    pgEventObject *e;
+    PyObject *dict, *dictcode;
+    SDL_Event event;
+    PyGILState_STATE gstate = PyGILState_Ensure();
+
+    dict = PyDict_New();
+    if (dict) {
+        if (type >= PGE_USEREVENT && type < PG_NUMEVENTS) {
+            dictcode = PyInt_FromLong(code);
+            PyDict_SetItemString(dict, "code", dictcode);
+            Py_DECREF(dictcode);
+        }
+        e = (pgEventObject *)pgEvent_New2(type, dict);
+        Py_DECREF(dict);
+
+        if (e) {
+            pgEvent_FillUserEvent(e, &event);
+#if IS_SDLv1
+            if (SDL_PushEvent(&event) < 0)
+#else
+            if (SDL_PushEvent(&event) <= 0)
+#endif
+                Py_DECREF(dict);
+            Py_DECREF(e);
+        }
+    }
+    PyGILState_Release(gstate);
+}
+
+static void
 endsound_callback(int channel)
 {
     if (channeldata) {
-        if (channeldata[channel].endevent && SDL_WasInit(SDL_INIT_VIDEO)) {
-            SDL_Event e;
-            memset(&e, 0, sizeof(e));
-            e.type = channeldata[channel].endevent;
-            if (e.type >= PGE_USEREVENT && e.type < PG_NUMEVENTS)
-                e.user.code = channel;
-            SDL_PushEvent(&e);
-        }
+        if (channeldata[channel].endevent && SDL_WasInit(SDL_INIT_VIDEO))
+            _pg_push_mixer_event(channeldata[channel].endevent, channel);
+
         if (channeldata[channel].queue) {
             PyGILState_STATE gstate = PyGILState_Ensure();
             int channelnum;
@@ -357,6 +384,7 @@ _init(int freq, int size, int channels, int chunk, char *devicename, int allowed
     Uint16 fmt = 0;
     int i;
     PyObject *music;
+    char *drivername;
 
     if (!freq) {
         freq = request_frequency;
@@ -455,6 +483,20 @@ _init(int freq, int size, int channels, int chunk, char *devicename, int allowed
                 channeldata[i].endevent = 0;
             }
         }
+
+#if IS_SDLv2
+        /* Compatibility:
+            pulse and dsound audio drivers were renamed in SDL2,
+            and we don't want it to fail.
+        */
+        drivername = SDL_getenv("SDL_AUDIODRIVER");
+        if (drivername && SDL_strncasecmp("pulse", drivername, SDL_strlen(drivername)) == 0) {
+            SDL_setenv("SDL_AUDIODRIVER", "pulseaudio", 1);
+        }
+        else if (drivername && SDL_strncasecmp("dsound", drivername, SDL_strlen(drivername)) == 0) {
+            SDL_setenv("SDL_AUDIODRIVER", "directsound", 1);
+        }
+#endif
 
         if (SDL_InitSubSystem(SDL_INIT_AUDIO) == -1)
             return PyInt_FromLong(0);
@@ -975,7 +1017,9 @@ sound_dealloc(pgSoundObject *self)
 }
 
 static PyTypeObject pgSound_Type = {
-    TYPE_HEAD(NULL, 0) "Sound", sizeof(pgSoundObject), 0,
+    PyVarObject_HEAD_INIT(NULL,0)
+    "Sound", 
+    sizeof(pgSoundObject), 0,
     (destructor)sound_dealloc, 0, 0, 0, /* setattr */
     0,                                  /* compare */
     0,                                  /* repr */
@@ -1290,7 +1334,8 @@ channel_dealloc(PyObject *self)
 }
 
 static PyTypeObject pgChannel_Type = {
-    TYPE_HEAD(NULL, 0) "Channel", /* name */
+    PyVarObject_HEAD_INIT(NULL,0)
+    "Channel",                    /* name */
     sizeof(pgChannelObject),      /* basic size */
     0,                            /* itemsize */
     channel_dealloc,              /* dealloc */
@@ -1983,6 +2028,10 @@ MODINIT_DEFINE(mixer)
         MODINIT_ERROR;
     }
     import_pygame_rwobject();
+    if (PyErr_Occurred()) {
+        MODINIT_ERROR;
+    }
+    import_pygame_event();
     if (PyErr_Occurred()) {
         MODINIT_ERROR;
     }
